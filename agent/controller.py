@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass, field
 
 from agent.config import MAX_MODEL_CALLS
 from agent.executor import TestReport, run_tests
-from agent.models import MockModelClient, build_prompt, estimate_call_cost
+from agent.models import ModelClient, build_prompt, estimate_call_cost
 from agent.policy import DESCRIPTIONS, plan_for
 from agent.task import CodingTask
 
@@ -79,7 +79,7 @@ def run_agent(
     task: CodingTask,
     preference: str,
     budget_usd: float,
-    client: MockModelClient,
+    client: ModelClient,
     executor: str = "docker",
     on_step: Callable[[Step], None] | None = None,
 ) -> RunResult:

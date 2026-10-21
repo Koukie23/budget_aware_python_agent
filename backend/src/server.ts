@@ -49,6 +49,20 @@ app.get("/api/examples", (_req, res) => {
   res.json(loadExamples());
 });
 
+app.get("/api/options", asyncRoute(async (_req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/options`);
+    if (!r.ok) throw new Error(`http ${r.status}`);
+    res.json(await r.json());
+  } catch {
+    res.json({
+      preferences: ["cheap", "balanced", "quality"],
+      client: "unknown",
+      mock_scenarios: [],
+    });
+  }
+}));
+
 app.post("/api/tasks", asyncRoute(async (req, res) => {
   const parsed = createTaskSchema.safeParse(req.body);
   if (!parsed.success) {

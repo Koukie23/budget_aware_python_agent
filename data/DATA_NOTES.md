@@ -37,7 +37,7 @@ Both corpora share `task_id`, so splitting by ID range keeps each problem in the
 - Full: 0 parse failures; 2 reference solutions fail their own tests, both in the test split and both caused by exact float equality:
   - 180 `distance_lat_long`
   - 493 `calculate_polygons`
-  How to handle them is decided in T4.
+  Keep both as-is for now. Re-check after training whether they still fail, whether they affect metrics, and whether they need a special rule.
 
 ## T1 sample fields (`data/samples/t1_samples.jsonl`)
 
@@ -50,15 +50,27 @@ Aligned with plan section 6.2. `prompt` is added in T4 once the template is fixe
 | `function_name`, `function_signature` | First top-level `def` in the reference code |
 | `target_code` | Reference solution (training target) |
 | `feedback_tests` | Official `test_list`, visible to the agent |
-| `hidden_tests` | Empty until the hidden-test source is decided in T4 |
+| `hidden_tests` | Empty until EvalPlus is reviewed before T8 |
 | `test_imports` | Extra imports required by tests |
 | `reference_test_results` | Result of running `target_code` on `feedback_tests` |
 
 T1 samples: 2 (prompt), 12 (test), 555 (validation), 604 (train). They are for interface checks and UI demos only; they are not used to tune anything.
 
-## Commands
+## T4 processed splits (`data/processed/`)
+
+Policy: train on full MBPP; evaluate on sanitized problems in the same official ID ranges. Hidden tests are empty. Prompt is `requirement + function_signature + feedback_tests` from `agent/prompt.py`. Tokenizer is `Salesforce/codegen-350M-mono`. Max length set to 2048. Train/val sequences are all under 544 / 379 tokens; one test example is 1063 tokens.
+
+| File | Source | n | task_id |
+| --- | --- | --- | --- |
+| `train.jsonl` | full | 374 | 601–974 |
+| `validation.jsonl` | sanitized | 43 | 554–600 (sanitized subset of 511–600) |
+| `test.jsonl` | sanitized | 257 | 11–510 (sanitized subset) |
+| `stats.json` | — | character-length summaries | — |
+
+No records were skipped. Character lengths (not tokens): train prompt mean 443, p95 665, max 1059; target mean 178, p95 409, max 908. Every train example has 3 feedback tests.
 
 ```bash
 python scripts/build_t1_samples.py
 python scripts/validate_sample.py --task-id 2
+python scripts/build_splits.py
 ```

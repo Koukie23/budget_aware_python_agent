@@ -102,7 +102,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+export interface AgentOptions {
+  preferences: Preference[];
+  client: "local" | "mock" | "unknown";
+  finetuned_model?: string;
+  mock_scenarios: MockScenario[];
+}
+
 export const api = {
+  options: () => request<AgentOptions>("/api/options"),
   examples: () => request<Example[]>("/api/examples"),
   createTask: (input: CreateTaskInput) =>
     request<{ id: number }>("/api/tasks", { method: "POST", body: JSON.stringify(input) }),

@@ -42,6 +42,7 @@ export function Workbench() {
   const [form] = Form.useForm<FormValues>();
   const { message } = App.useApp();
   const [examples, setExamples] = useState<Example[]>([]);
+  const [clientKind, setClientKind] = useState<"local" | "mock" | "unknown">("unknown");
   const [exampleId, setExampleId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [params, setParams] = useSearchParams();
@@ -50,6 +51,7 @@ export function Workbench() {
 
   useEffect(() => {
     api.examples().then(setExamples).catch(() => message.error("Could not load examples."));
+    api.options().then((opts) => setClientKind(opts.client)).catch(() => setClientKind("unknown"));
   }, []);
 
   const loadExample = (id: number | null) => {
@@ -171,13 +173,18 @@ export function Workbench() {
             >
               <InputNumber min={0.000001} max={10} step={0.01} prefix="$" style={{ width: "100%" }} />
             </Form.Item>
-            <Form.Item
-              name="mock_scenario"
-              label="Mock model behavior"
-              extra="Both models are mocked until the fine-tuned model is trained. Custom tasks without an MBPP example cannot be solved by the mock."
-            >
-              <Select options={(Object.keys(SCENARIO_LABELS) as MockScenario[]).map((s) => ({ value: s, label: SCENARIO_LABELS[s] }))} />
-            </Form.Item>
+            {clientKind === "mock" && (
+              <Form.Item
+                name="mock_scenario"
+                label="Mock model behavior"
+                extra="Used only when AGENT_CLIENT=mock. Custom tasks without an MBPP example cannot be solved by the mock."
+              >
+                <Select options={(Object.keys(SCENARIO_LABELS) as MockScenario[]).map((s) => ({ value: s, label: SCENARIO_LABELS[s] }))} />
+              </Form.Item>
+            )}
+            {clientKind === "local" && (
+              <Text type="secondary">Generate and repair use the local LoRA (codegen-350m-lora-v2). The strong model API is not wired yet.</Text>
+            )}
             <Space>
               <Button type="primary" htmlType="submit" icon={<PlayCircleOutlined />} loading={submitting} disabled={running}>
                 {running ? "Running..." : "Run agent"}

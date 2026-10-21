@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 from agent.config import DEFAULT_BUDGET_USD  # noqa: E402
 from agent.controller import run_agent  # noqa: E402
-from agent.models import MOCK_SCENARIOS, MockModelClient  # noqa: E402
+from agent.models import CLIENT_KINDS, MOCK_SCENARIOS, make_client  # noqa: E402
 from agent.policy import PREFERENCES  # noqa: E402
 from agent.task import load_task  # noqa: E402
 
@@ -28,13 +28,15 @@ def main() -> int:
     p.add_argument("--samples", type=Path, default=DEFAULT_SAMPLES)
     p.add_argument("--preference", choices=PREFERENCES, default="balanced")
     p.add_argument("--budget", type=float, default=DEFAULT_BUDGET_USD, help="USD")
+    p.add_argument("--client", choices=CLIENT_KINDS, default="local")
+    p.add_argument("--adapter", type=Path, default=None, help="LoRA adapter dir (local client)")
     p.add_argument("--mock-scenario", choices=MOCK_SCENARIOS, default="pass")
     p.add_argument("--executor", choices=("docker", "subprocess"), default="docker")
     p.add_argument("--no-save", action="store_true")
     args = p.parse_args()
 
     task = load_task(args.samples, args.task_id)
-    client = MockModelClient(args.mock_scenario)
+    client = make_client(args.client, adapter=args.adapter, mock_scenario=args.mock_scenario)
     result = run_agent(task, args.preference, args.budget, client, executor=args.executor)
 
     print(f"Task {task.task_id}: {task.requirement}")
@@ -61,7 +63,7 @@ def main() -> int:
     if not args.no_save:
         RUNS_DIR.mkdir(exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        out = RUNS_DIR / f"run_{task.task_id}_{args.mock_scenario}_{stamp}.json"
+        out = RUNS_DIR / f"run_{task.task_id}_{args.client}_{stamp}.json"
         out.write_text(json.dumps(result.to_dict(), indent=2))
         print(f"Saved trace: {out.relative_to(ROOT)}")
     return 0 if result.status == "succeeded" else 2

@@ -1,0 +1,105 @@
+{
+  "corpus_policy": {
+    "train": "full",
+    "validation": "sanitized",
+    "test": "sanitized"
+  },
+  "hidden_tests": "empty until EvalPlus is reviewed before T8",
+  "prompt": "requirement + function_signature + feedback_tests; see agent/prompt.py",
+  "tokenizer": {
+    "id": "Salesforce/codegen-350M-mono",
+    "max_length": 1024
+  },
+  "skipped": [],
+  "splits": {
+    "train": {
+      "n": 374,
+      "task_id_min": 601,
+      "task_id_max": 974,
+      "prompt_chars": {
+        "mean": 442.7,
+        "p50": 408,
+        "p95": 665,
+        "max": 1059
+      },
+      "target_chars": {
+        "mean": 178.4,
+        "p50": 143,
+        "p95": 409,
+        "max": 908
+      },
+      "n_feedback_tests": {
+        "3": 374
+      },
+      "source": "full",
+      "path": "data/processed/train.jsonl",
+      "tokens": {
+        "mean": 225.7,
+        "p50": 207,
+        "p95": 369,
+        "max": 544,
+        "over_max_length": 0
+      }
+    },
+    "validation": {
+      "n": 43,
+      "task_id_min": 554,
+      "task_id_max": 600,
+      "prompt_chars": {
+        "mean": 432.4,
+        "p50": 402,
+        "p95": 600,
+        "max": 813
+      },
+      "target_chars": {
+        "mean": 141.3,
+        "p50": 111,
+        "p95": 318,
+        "max": 378
+      },
+      "n_feedback_tests": {
+        "3": 43
+      },
+      "source": "sanitized",
+      "path": "data/processed/validation.jsonl",
+      "tokens": {
+        "mean": 203.5,
+        "p50": 193,
+        "p95": 315,
+        "max": 379,
+        "over_max_length": 0
+      }
+    },
+    "test": {
+      "n": 257,
+      "task_id_min": 11,
+      "task_id_max": 479,
+      "prompt_chars": {
+        "mean": 457.3,
+        "p50": 421,
+        "p95": 685,
+        "max": 2890
+      },
+      "target_chars": {
+        "mean": 157.1,
+        "p50": 124,
+        "p95": 381,
+        "max": 906
+      },
+      "n_feedback_tests": {
+        "3": 253,
+        "4": 3,
+        "5": 1
+      },
+      "source": "sanitized",
+      "path": "data/processed/test.jsonl",
+      "tokens": {
+        "mean": 214.4,
+        "p50": 198,
+        "p95": 375,
+        "max": 1063,
+        "over_max_length": 1
+      }
+    }
+  }
+}

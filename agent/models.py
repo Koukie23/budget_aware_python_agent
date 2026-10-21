@@ -1,12 +1,23 @@
-"""Model call adapter. Only a deterministic mock exists until the real models are wired (T7)."""
+"""Model call adapter: local LoRA for the fine-tuned model; strong API still unwired."""
 
 from __future__ import annotations
 
-import re
+import os
+import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Protocol
 
-from agent.config import FINETUNED_MODEL_ID, MAX_OUTPUT_TOKENS, PRICE_PER_1K, STRONG_MODEL_ID
+from agent.config import (
+    DEFAULT_ADAPTER_DIR,
+    FINETUNED_MODEL_ID,
+    MAX_OUTPUT_TOKENS,
+    PRICE_PER_1K,
+    STRONG_MODEL_ID,
+)
+from agent.extract import extract_code
+from agent.prompt import generate_prompt, repair_prompt
 from agent.task import CodingTask
 
 # Scenarios control how the mock behaves so every state-machine branch can be exercised.
@@ -16,6 +27,7 @@ from agent.task import CodingTask
 #   exhaust   : every model always fails
 #   timeout   : the fine-tuned model first returns an infinite loop, then solves on repair
 MOCK_SCENARIOS = ("pass", "repair", "escalate", "exhaust", "timeout")
+CLIENT_KINDS = ("local", "mock")
 
 
 @dataclass
@@ -27,6 +39,10 @@ class ModelResponse:
     output_tokens: int
     cost_usd: float
     latency_sec: float
+
+
+class ModelClient(Protocol):
+    def generate(self, model_id: str, prompt: str, task: CodingTask) -> ModelResponse: ...
 
 
 def estimate_tokens(text: str) -> int:
@@ -44,24 +60,15 @@ def estimate_call_cost(model_id: str, prompt: str) -> float:
 
 
 def build_prompt(task: CodingTask, previous_code: str | None, error_summary: str | None) -> str:
-    tests = "\n".join(task.feedback_tests)
-    parts = [
-        "You are an expert Python programmer.",
-        f"Task: {task.requirement}",
-        f"Implement exactly this function: {task.function_signature}",
-        f"Your code should pass these tests:\n{tests}",
-    ]
-    if previous_code is not None:
-        parts.append(f"Your previous code:\n```python\n{previous_code}\n```")
-        parts.append(f"It failed with:\n{error_summary}")
-        parts.append("Fix the code.")
-    parts.append("Return only one ```python``` code block.")
-    return "\n\n".join(parts)
-
-
-def extract_code(text: str) -> str:
-    match = re.search(r"```(?:python)?\s*\n(.*?)```", text, re.DOTALL)
-    return (match.group(1) if match else text).strip()
+    if previous_code is None:
+        return generate_prompt(task.requirement, task.function_signature, task.feedback_tests)
+    return repair_prompt(
+        task.requirement,
+        task.function_signature,
+        task.feedback_tests,
+        previous_code,
+        error_summary or "",
+    )
 
 
 def _wrong_code(task: CodingTask) -> str:
@@ -77,6 +84,7 @@ class MockModelClient:
         if scenario not in MOCK_SCENARIOS:
             raise ValueError(f"scenario must be one of {MOCK_SCENARIOS}")
         self.scenario = scenario
+        self.kind = "mock"
         self.calls: dict[str, int] = {FINETUNED_MODEL_ID: 0, STRONG_MODEL_ID: 0}
 
     def _solve(self, model_id: str, task: CodingTask, nth: int) -> str:
@@ -88,7 +96,6 @@ class MockModelClient:
             return _wrong_code(task)
         if model_id == STRONG_MODEL_ID:
             return good
-        # fine-tuned model
         if s == "repair":
             return good if nth >= 2 else _wrong_code(task)
         if s == "timeout":
@@ -97,7 +104,7 @@ class MockModelClient:
 
     def generate(self, model_id: str, prompt: str, task: CodingTask) -> ModelResponse:
         start = time.monotonic()
-        self.calls[model_id] += 1
+        self.calls[model_id] = self.calls.get(model_id, 0) + 1
         code = self._solve(model_id, task, self.calls[model_id])
         raw = f"```python\n{code}\n```"
         in_tok = estimate_tokens(prompt)
@@ -105,9 +112,90 @@ class MockModelClient:
         return ModelResponse(
             model_id=model_id,
             raw_text=raw,
-            code=extract_code(raw),
+            code=extract_code(raw, function_name=task.function_name),
             input_tokens=in_tok,
             output_tokens=out_tok,
             cost_usd=price(model_id, in_tok, out_tok),
             latency_sec=time.monotonic() - start,
         )
+
+
+class LocalLoraClient:
+    """Fine-tuned LoRA on the local device. Strong-model calls stay unwired."""
+
+    def __init__(self, adapter_dir: str | Path | None = None):
+        self.kind = "local"
+        self.adapter_dir = Path(adapter_dir) if adapter_dir else DEFAULT_ADAPTER_DIR
+        if not (self.adapter_dir / "adapter_config.json").is_file():
+            raise FileNotFoundError(f"LoRA adapter not found: {self.adapter_dir}")
+        self._lock = threading.Lock()
+        self._model = None
+        self._tokenizer = None
+        self.device = None
+        self.calls: dict[str, int] = {FINETUNED_MODEL_ID: 0, STRONG_MODEL_ID: 0}
+
+    def load(self) -> None:
+        if self._model is not None:
+            return
+        from training.device import pick_device
+        from training.load import load_finetuned
+
+        device = pick_device()
+        model, tokenizer = load_finetuned(str(self.adapter_dir), device)
+        self._model = model
+        self._tokenizer = tokenizer
+        self.device = device
+
+    def generate(self, model_id: str, prompt: str, task: CodingTask) -> ModelResponse:
+        start = time.monotonic()
+        self.calls[model_id] = self.calls.get(model_id, 0) + 1
+        if model_id != FINETUNED_MODEL_ID:
+            raw = "# strong model API is not wired yet"
+            code = extract_code(_wrong_code(task), function_name=task.function_name)
+            in_tok = estimate_tokens(prompt)
+            out_tok = estimate_tokens(raw)
+            return ModelResponse(
+                model_id=model_id,
+                raw_text=raw,
+                code=code,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
+                cost_usd=0.0,
+                latency_sec=time.monotonic() - start,
+            )
+
+        from training.generate import complete
+
+        with self._lock:
+            self.load()
+            completion = complete(
+                self._model,
+                self._tokenizer,
+                prompt,
+                self.device,
+                MAX_OUTPUT_TOKENS,
+                function_name=task.function_name,
+            )
+        return ModelResponse(
+            model_id=model_id,
+            raw_text=completion.raw_text,
+            code=completion.code,
+            input_tokens=completion.input_tokens,
+            output_tokens=completion.output_tokens,
+            cost_usd=0.0,
+            latency_sec=time.monotonic() - start,
+        )
+
+
+def make_client(
+    kind: str | None = None,
+    *,
+    adapter: str | Path | None = None,
+    mock_scenario: str = "pass",
+) -> MockModelClient | LocalLoraClient:
+    resolved = (kind or os.environ.get("AGENT_CLIENT") or "local").strip().lower()
+    if resolved not in CLIENT_KINDS:
+        raise ValueError(f"client must be one of {CLIENT_KINDS}")
+    if resolved == "mock":
+        return MockModelClient(mock_scenario)
+    return LocalLoraClient(adapter or os.environ.get("LORA_ADAPTER"))
