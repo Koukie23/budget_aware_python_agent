@@ -106,6 +106,8 @@ export interface AgentOptions {
   preferences: Preference[];
   client: "local" | "mock" | "unknown";
   finetuned_model?: string;
+  strong_model?: string;
+  strong_ready?: boolean;
   mock_scenarios: MockScenario[];
 }
 

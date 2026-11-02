@@ -13,8 +13,8 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from agent.controller import Step, run_agent
-from agent.config import DEFAULT_ADAPTER_DIR, FINETUNED_MODEL_ID
-from agent.models import CLIENT_KINDS, MOCK_SCENARIOS, LocalLoraClient, make_client
+from agent.config import DEFAULT_ADAPTER_DIR, FINETUNED_MODEL_ID, STRONG_MODEL_ID
+from agent.models import CLIENT_KINDS, MOCK_SCENARIOS, AgentModelClient, make_client
 from agent.policy import PREFERENCES
 from agent.task import CodingTask
 
@@ -113,13 +113,16 @@ def _preload() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    loaded = isinstance(_CLIENT, LocalLoraClient) and _CLIENT._model is not None
-    device = str(_CLIENT.device) if isinstance(_CLIENT, LocalLoraClient) and _CLIENT.device else None
+    loaded = isinstance(_CLIENT, AgentModelClient) and _CLIENT._model is not None
+    device = str(_CLIENT.device) if isinstance(_CLIENT, AgentModelClient) and _CLIENT.device else None
+    strong_ready = isinstance(_CLIENT, AgentModelClient) and _CLIENT.strong.available()
     return {
         "status": "ok",
         "executor": EXECUTOR,
         "client": CLIENT_KIND,
         "finetuned_model": FINETUNED_MODEL_ID,
+        "strong_model": STRONG_MODEL_ID,
+        "strong_ready": strong_ready,
         "adapter": str(DEFAULT_ADAPTER_DIR) if CLIENT_KIND == "local" else None,
         "device": device,
         "loaded": loaded,
@@ -128,10 +131,13 @@ def health() -> dict:
 
 @app.get("/options")
 def options() -> dict:
+    strong_ready = isinstance(_CLIENT, AgentModelClient) and _CLIENT.strong.available()
     return {
         "preferences": list(PREFERENCES),
         "client": CLIENT_KIND,
         "finetuned_model": FINETUNED_MODEL_ID,
+        "strong_model": STRONG_MODEL_ID,
+        "strong_ready": strong_ready,
         "mock_scenarios": list(MOCK_SCENARIOS) if CLIENT_KIND == "mock" else [],
     }
 

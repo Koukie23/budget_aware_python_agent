@@ -43,6 +43,7 @@ export function Workbench() {
   const { message } = App.useApp();
   const [examples, setExamples] = useState<Example[]>([]);
   const [clientKind, setClientKind] = useState<"local" | "mock" | "unknown">("unknown");
+  const [strongHint, setStrongHint] = useState("");
   const [exampleId, setExampleId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [params, setParams] = useSearchParams();
@@ -51,7 +52,19 @@ export function Workbench() {
 
   useEffect(() => {
     api.examples().then(setExamples).catch(() => message.error("Could not load examples."));
-    api.options().then((opts) => setClientKind(opts.client)).catch(() => setClientKind("unknown"));
+    api.options()
+      .then((opts) => {
+        setClientKind(opts.client);
+        if (opts.client === "local") {
+          const name = opts.strong_model ?? "DeepSeek";
+          setStrongHint(
+            opts.strong_ready
+              ? `Generate and repair use the local LoRA. Escalate uses ${name}.`
+              : `Generate and repair use the local LoRA. Set DEEPSEEK_API_KEY and restart the agent to enable ${name}.`,
+          );
+        }
+      })
+      .catch(() => setClientKind("unknown"));
   }, []);
 
   const loadExample = (id: number | null) => {
@@ -182,9 +195,7 @@ export function Workbench() {
                 <Select options={(Object.keys(SCENARIO_LABELS) as MockScenario[]).map((s) => ({ value: s, label: SCENARIO_LABELS[s] }))} />
               </Form.Item>
             )}
-            {clientKind === "local" && (
-              <Text type="secondary">Generate and repair use the local LoRA (codegen-350m-lora-v2). The strong model API is not wired yet.</Text>
-            )}
+            {clientKind === "local" && strongHint && <Text type="secondary">{strongHint}</Text>}
             <Space>
               <Button type="primary" htmlType="submit" icon={<PlayCircleOutlined />} loading={submitting} disabled={running}>
                 {running ? "Running..." : "Run agent"}

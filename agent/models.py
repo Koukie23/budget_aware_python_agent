@@ -11,9 +11,12 @@ from typing import Protocol
 
 from agent.config import (
     DEFAULT_ADAPTER_DIR,
+    DEEPSEEK_API_KEY,
+    DEEPSEEK_BASE_URL,
     FINETUNED_MODEL_ID,
     MAX_OUTPUT_TOKENS,
     PRICE_PER_1K,
+    STRONG_MAX_OUTPUT_TOKENS,
     STRONG_MODEL_ID,
 )
 from agent.extract import extract_code
@@ -54,9 +57,13 @@ def price(model_id: str, input_tokens: int, output_tokens: int) -> float:
     return input_tokens / 1000 * p["input"] + output_tokens / 1000 * p["output"]
 
 
+def output_cap(model_id: str) -> int:
+    return STRONG_MAX_OUTPUT_TOKENS if model_id == STRONG_MODEL_ID else MAX_OUTPUT_TOKENS
+
+
 def estimate_call_cost(model_id: str, prompt: str) -> float:
     """Conservative pre-call estimate: assume the full output-token cap is used."""
-    return price(model_id, estimate_tokens(prompt), MAX_OUTPUT_TOKENS)
+    return price(model_id, estimate_tokens(prompt), output_cap(model_id))
 
 
 def build_prompt(task: CodingTask, previous_code: str | None, error_summary: str | None) -> str:
@@ -150,19 +157,7 @@ class LocalLoraClient:
         start = time.monotonic()
         self.calls[model_id] = self.calls.get(model_id, 0) + 1
         if model_id != FINETUNED_MODEL_ID:
-            raw = "# strong model API is not wired yet"
-            code = extract_code(_wrong_code(task), function_name=task.function_name)
-            in_tok = estimate_tokens(prompt)
-            out_tok = estimate_tokens(raw)
-            return ModelResponse(
-                model_id=model_id,
-                raw_text=raw,
-                code=code,
-                input_tokens=in_tok,
-                output_tokens=out_tok,
-                cost_usd=0.0,
-                latency_sec=time.monotonic() - start,
-            )
+            raise ValueError(f"{model_id} is not served by LocalLoraClient")
 
         from training.generate import complete
 
@@ -187,15 +182,102 @@ class LocalLoraClient:
         )
 
 
+class DeepSeekClient:
+    def __init__(self, api_key: str | None = None, model_id: str | None = None):
+        self.kind = "deepseek"
+        self.api_key = api_key if api_key is not None else DEEPSEEK_API_KEY
+        self.model_id = model_id or STRONG_MODEL_ID
+        self.base_url = DEEPSEEK_BASE_URL.rstrip("/")
+        self.calls: dict[str, int] = {self.model_id: 0}
+
+    def available(self) -> bool:
+        return bool(self.api_key)
+
+    def generate(self, model_id: str, prompt: str, task: CodingTask) -> ModelResponse:
+        if not self.api_key:
+            raise RuntimeError("DEEPSEEK_API_KEY is not set; cannot call the strong model")
+        start = time.monotonic()
+        self.calls[model_id] = self.calls.get(model_id, 0) + 1
+        import httpx
+
+        payload = {
+            "model": self.model_id,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an expert Python programmer. Return only one python code block.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens": STRONG_MAX_OUTPUT_TOKENS,
+            "temperature": 0,
+            "thinking": {"type": "disabled"},
+        }
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+        if response.status_code >= 400:
+            raise RuntimeError(f"DeepSeek API {response.status_code}: {response.text[:400]}")
+        data = response.json()
+        raw = data["choices"][0]["message"].get("content") or ""
+        usage = data.get("usage") or {}
+        in_tok = int(usage.get("prompt_tokens") or estimate_tokens(prompt))
+        out_tok = int(usage.get("completion_tokens") or estimate_tokens(raw))
+        return ModelResponse(
+            model_id=model_id,
+            raw_text=raw,
+            code=extract_code(raw, function_name=task.function_name),
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            cost_usd=price(model_id, in_tok, out_tok),
+            latency_sec=time.monotonic() - start,
+        )
+
+
+class AgentModelClient:
+    """Local LoRA for generate/repair; DeepSeek for escalate."""
+
+    def __init__(self, local: LocalLoraClient, strong: DeepSeekClient):
+        self.kind = "local"
+        self.local = local
+        self.strong = strong
+        self.calls = local.calls
+
+    def load(self) -> None:
+        self.local.load()
+
+    @property
+    def device(self):
+        return self.local.device
+
+    @property
+    def _model(self):
+        return self.local._model
+
+    def generate(self, model_id: str, prompt: str, task: CodingTask) -> ModelResponse:
+        if model_id == FINETUNED_MODEL_ID:
+            return self.local.generate(model_id, prompt, task)
+        return self.strong.generate(model_id, prompt, task)
+
+
 def make_client(
     kind: str | None = None,
     *,
     adapter: str | Path | None = None,
     mock_scenario: str = "pass",
-) -> MockModelClient | LocalLoraClient:
+) -> MockModelClient | AgentModelClient:
     resolved = (kind or os.environ.get("AGENT_CLIENT") or "local").strip().lower()
     if resolved not in CLIENT_KINDS:
         raise ValueError(f"client must be one of {CLIENT_KINDS}")
     if resolved == "mock":
         return MockModelClient(mock_scenario)
-    return LocalLoraClient(adapter or os.environ.get("LORA_ADAPTER"))
+    return AgentModelClient(
+        LocalLoraClient(adapter or os.environ.get("LORA_ADAPTER")),
+        DeepSeekClient(),
+    )
