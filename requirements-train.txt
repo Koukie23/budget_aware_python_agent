@@ -1,5 +1,9 @@
-torch
-transformers
-peft
-accelerate
-safetensors
+torch==2.14.1
+transformers==5.20.2
+peft==0.21.2
+accelerate==1.15.0
+safetensors==0.8.0
+tokenizers==0.23.3
+fastapi
+uvicorn
+httpx

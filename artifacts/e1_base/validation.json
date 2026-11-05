@@ -1,0 +1,395 @@
+{
+  "n": 43,
+  "n_pass": 12,
+  "pass_at_1": 0.27906976744186046,
+  "extract_fail": 0,
+  "results": [
+    {
+      "task_id": 554,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 59
+    },
+    {
+      "task_id": 555,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "generated_chars": 54
+    },
+    {
+      "task_id": 556,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 172
+    },
+    {
+      "task_id": 557,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 92
+    },
+    {
+      "task_id": 558,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "generated_chars": 56
+    },
+    {
+      "task_id": 559,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 168
+    },
+    {
+      "task_id": 560,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 92
+    },
+    {
+      "task_id": 562,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 229
+    },
+    {
+      "task_id": 563,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 52
+    },
+    {
+      "task_id": 564,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 172
+    },
+    {
+      "task_id": 565,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 51
+    },
+    {
+      "task_id": 566,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 59
+    },
+    {
+      "task_id": 567,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 130
+    },
+    {
+      "task_id": 568,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 62
+    },
+    {
+      "task_id": 569,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 70
+    },
+    {
+      "task_id": 572,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 83
+    },
+    {
+      "task_id": 573,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "generated_chars": 61
+    },
+    {
+      "task_id": 574,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 48
+    },
+    {
+      "task_id": 576,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 51
+    },
+    {
+      "task_id": 577,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 2,
+      "tests_total": 3,
+      "generated_chars": 46
+    },
+    {
+      "task_id": 578,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 113
+    },
+    {
+      "task_id": 579,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 100
+    },
+    {
+      "task_id": 580,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 117
+    },
+    {
+      "task_id": 581,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 40
+    },
+    {
+      "task_id": 582,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 94
+    },
+    {
+      "task_id": 583,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 178
+    },
+    {
+      "task_id": 584,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 151
+    },
+    {
+      "task_id": 585,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 87
+    },
+    {
+      "task_id": 586,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 45
+    },
+    {
+      "task_id": 587,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 46
+    },
+    {
+      "task_id": 588,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 52
+    },
+    {
+      "task_id": 589,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 709
+    },
+    {
+      "task_id": 590,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 128
+    },
+    {
+      "task_id": 591,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 98
+    },
+    {
+      "task_id": 592,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "generated_chars": 182
+    },
+    {
+      "task_id": 593,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 70
+    },
+    {
+      "task_id": 594,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "generated_chars": 80
+    },
+    {
+      "task_id": 595,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 142
+    },
+    {
+      "task_id": 596,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 64
+    },
+    {
+      "task_id": 597,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "generated_chars": 280
+    },
+    {
+      "task_id": 598,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 878
+    },
+    {
+      "task_id": 599,
+      "split": "validation",
+      "passed": false,
+      "test_status": "failed",
+      "tests_passed": 0,
+      "tests_total": 3,
+      "generated_chars": 112
+    },
+    {
+      "task_id": 600,
+      "split": "validation",
+      "passed": true,
+      "test_status": "passed",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "generated_chars": 85
+    }
+  ]
+}

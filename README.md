@@ -59,17 +59,37 @@
 | E2-v1 LoRA（已弃用） | 18.6% | 10.9% |
 | E2-v2 LoRA（当前接入） | **14/43 = 32.6%** | **59/257 = 23.0%** |
 
-v2 权重默认路径：`models/codegen350m_lora_v2/best`（仓库不收录权重，需本地训练或自行放置）。350M 单独解题能力有限，网页四个示例里本地模型通常只能过一部分；Balanced / Quality first 才会升级。
+v2 适配器不进仓库，也不应塞进提交压缩包。请从 Release 下载：
+
+- 适配器：https://github.com/Koukie23/budget_aware_python_agent/releases/tag/lora-v2
+- 基座（Hugging Face，推理时自动拉取）：`Salesforce/codegen-350M-mono`
+
+```bash
+.venv/bin/python scripts/download_adapter.py
+```
+
+解压后路径：`models/codegen350m_lora_v2/best`。加载方式与训练时相同（`training/load.py`）：
+
+```python
+from training.device import pick_device
+from training.load import load_finetuned
+
+model, tokenizer = load_finetuned("models/codegen350m_lora_v2/best", pick_device())
+```
+
+依赖版本见 `requirements-train.txt`（训练时：`torch==2.14.1`、`transformers==5.20.2`、`peft==0.21.2`）。原始训练日志和逐题评测在 `artifacts/`，不包含权重。
+
+350M 单独解题能力有限，网页四个示例里本地模型通常只能过一部分；Balanced / Quality first 才会升级。
 
 ## 本地运行
 
-需要：Python 3.11、Node.js、PostgreSQL（库名 `budget_agent`）、本机 LoRA 权重。Apple Silicon 上用 MPS。
+需要：Python 3.11、Node.js、PostgreSQL（库名 `budget_agent`）。Apple Silicon 上用 MPS。基座由 Hugging Face 下载；LoRA 用下面的脚本取 Release，不要把权重打进提交包。
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-train.txt
-pip install fastapi uvicorn httpx peft
+.venv/bin/python scripts/download_adapter.py
 
 cp .env.example .env
 # 填写 DEEPSEEK_API_KEY

@@ -1,0 +1,34 @@
+{
+  "base_model": "Salesforce/codegen-350M-mono",
+  "device": "mps",
+  "seed": 42,
+  "epochs": 2,
+  "lr": 5e-05,
+  "lora": {
+    "r": 16,
+    "alpha": 32,
+    "target": [
+      "qkv_proj",
+      "out_proj"
+    ]
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.734283781904269,
+      "val_loss": 0.5570514971433684,
+      "val_pass_at_1": 0.32558139534883723,
+      "lr": 2.6111111111111114e-05,
+      "seconds": 252.6
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.5375815596889685,
+      "val_loss": 0.545614477160365,
+      "val_pass_at_1": 0.3023255813953488,
+      "lr": 0.0,
+      "seconds": 509.8
+    }
+  ],
+  "best_val_pass_at_1": 0.32558139534883723
+}
